@@ -29,6 +29,7 @@
 #region Using Directives
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System;
 using System.Runtime.Serialization;
@@ -369,6 +370,23 @@ namespace CommandLine
 
             return pairZero.Left;
         }
+    }
+
+    /// <summary>
+    /// Models a function taking options as a parameter.
+    /// </summary>
+    public class VerbAttribute : Attribute
+    {
+        /// <summary>
+        /// By default the name of the verb is a lowercase version of the
+        /// method name, set this property to override.
+        /// </summary>
+        public string Name { get; set; }
+
+        /// <summary>
+        /// A short description of this command line verb. Usually a sentence summary. 
+        /// </summary>
+        public string HelpText { get; set; }
     }
     #endregion
 
@@ -1830,6 +1848,53 @@ namespace CommandLine
                 (commandLineOptionsBase).InternalLastPostParsingState.Errors.AddRange(state);
         }
     }
+
+    ///<summary>
+    /// Provides method to parse command line verbs.
+    ///</summary>
+    public class VerbParser
+    {
+        public static VerbParser Default = new VerbParser();
+        internal ICommandLineParser ArgumentParser = CommandLineParser.Default;
+
+        public bool ParseArguments(string[] args, object verbs)
+        {
+            // store name of verb and remove it from args
+            var verbName = args[0];
+            args = args.Skip(1).ToArray();
+
+            // find verb method
+            Pair<MethodInfo, VerbAttribute> verb = null;
+            foreach (Pair<MethodInfo, VerbAttribute> pair in
+                ReflectionUtil.RetrieveMethods<VerbAttribute>(verbs))
+            {
+                string name = pair.Right.Name;
+                if (string.IsNullOrEmpty(name))
+                {
+                    name = pair.Left.Name.ToLower();
+                }
+                if (verbName.Equals(name))
+                {
+                    verb = pair;
+                    break;
+                }
+            }
+            if (verb == null)
+            {
+                return false; // verb not found
+            }
+
+            object options = Activator.CreateInstance(
+                verb.Left.GetParameters()[0].ParameterType);
+            if (!ArgumentParser.ParseArguments(args, options))
+            {
+                return false; // couldnt parse verb arguments
+            }
+
+            verb.Left.Invoke(verbs, new[] { options });
+            return true;
+        }
+    }
     #endregion
 
     #region Utility
@@ -1900,6 +1965,23 @@ namespace CommandLine
             }
 
             return null;
+        }
+
+        public static IEnumerable<Pair<MethodInfo, TAttribute>> RetrieveMethods<TAttribute>(object target)
+                where TAttribute : Attribute
+        {
+            var info = target.GetType().GetMethods();
+
+            foreach (MethodInfo method in info)
+            {
+                if (!method.IsStatic)
+                {
+                    Attribute attribute =
+                        Attribute.GetCustomAttribute(method, typeof(TAttribute), false);
+                    if (attribute != null)
+                        yield return new Pair<MethodInfo, TAttribute>(method, (TAttribute)attribute);
+                }
+            }
         }
 
         public static TAttribute RetrieveMethodAttributeOnly<TAttribute>(object target)

@@ -2,6 +2,8 @@ src/libcmdline/bin/*
 src/libcmdline/obj
 src/sample/bin/*
 src/sample/obj
+src/verbsample/bin/*
+src/verbsample/obj
 src/tests/bin/*
 src/tests/obj
 src/templates/CSharpTemplate/bin/*
@@ -16,3 +18,5 @@ src/templates/VBNetTemplate/obj
 src/libcmdline/test-results/*
 src/tests/test-results/*
 *.DS_Store
+_ReSharper.CommandLine
+*ReSharper.user
