@@ -520,6 +520,8 @@ namespace CommandLine.Text
 
             var e = new FormatOptionHelpTextEventArgs(option);
             OnFormatOptionHelpText(e);
+
+            // TODO this is a problem, you cant assign HelpText if HelpTextKey is used
             option.HelpText = e.Option.HelpText;
 
             if (!string.IsNullOrEmpty(option.HelpText))

@@ -76,6 +76,9 @@ namespace SampleApp
 
             [Option("optimize", HelpText = "Optimize for Speed|Accuracy.")]
             public OptimizeFor Optimization {get;set;}
+
+            [Option('t', "temp", HelpTextKey = "TempHelpText")]
+            public string Temp { get; set; }
             #endregion
 
             #region Specialized Option Attribute
@@ -159,6 +162,8 @@ namespace SampleApp
 #if EXEC_TESTS
             RunATestForDebugging();
 #endif
+            BaseOptionAttribute.ResourceManager = Properties.Resource1.ResourceManager;
+
             var options = new Options();
             var parser = new CommandLineParser(new CommandLineParserSettings(Console.Error));
             if (!parser.ParseArguments(args, options))
